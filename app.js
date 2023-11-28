@@ -13,7 +13,15 @@ const passport = require("passport");
 
 const app = express();
 
-const db= require("./config/keys.js").MongoURI;
+//const db= require("./config/keys.js").MongoURI;
+
+// app.use(session({
+//   //secret: process.env.SECRET,
+//   store: MongoStore.create({ mongoUrl: MongoUR }),
+//   resave: true,
+//   saveUninitialized: true
+// }));
+const db= process.env.MONGO_CONNECTION;
 app.set('view engine', 'ejs');
 
 app.use(express.static("public"));
