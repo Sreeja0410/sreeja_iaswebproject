@@ -6,6 +6,7 @@ const ejs=require("ejs");
 const expressLayouts = require("express-ejs-layouts");
 const mongoose = require("mongoose");
 const flash = require("connect-flash");
+
 const bcrypt = require("bcryptjs")
 const session = require("express-session");
 const MongoStore = require('connect-mongo');
@@ -15,19 +16,20 @@ const app = express();
 
 require("./config/passport")(passport);
 
-app.use(session({
-  secret: process.env.SECRET,
-  resave: true,
-  saveUninitialized: true
-}));
 const db= process.env.MONGO_CONNECTION;
+//app.use(expressLayouts);
 app.set('view engine', 'ejs');
+
 app.use(express.static("public"));
 
 app.use(bodyParser.urlencoded({extended: true}));
-const secret=process.env.SECRET;
 
-
+app.use(session({
+  secret: process.env.SECRET,
+  //store: MongoStore.create({ mongoUrl: MongoUR }),
+  resave: true,
+  saveUninitialized: true
+}));
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -43,20 +45,24 @@ app.use((req,res,next) => {
 })
 
 
+
+
 mongoose.connect(db)
 .then(() => console.log("alll ok"))
 .catch(err => console.log(err));
 
 const User = require("./models/User.js")
 
-app.get("/", function(req,res){
-   res.render("login");
-})
+app.get("/",function(req,res){
+  res.render("login");
+});
+
 
 
 app.get("/login",function(req,res){
   res.render("login");
 });
+
 
 app.get("/signup",function(req,res){
   res.render("signup");
@@ -64,17 +70,29 @@ app.get("/signup",function(req,res){
 
 const {ensureAuthenticated} = require("./config/auth.js");
 
-app.get("/iasweb",ensureAuthenticated,(req,res) => {
-  const thisEmail = req.user.email;
-  User.findOne({email: thisEmail}, function(err, foundUser){
-    if(!err){
-      res.render("todo",{
-        listItems:foundUser.lists,userEmail: thisEmail
-      })
-    }
-  })
+app.get("/iasweb", ensureAuthenticated, (req, res) => {
+    const thisEmail = req.user.email;
+    User.findOne({ email: thisEmail })
+      .then(foundUser => {
+        if (!foundUser) {
+          // Handle the case where no user is found
+          // You might want to redirect or render an error page
+          return res.status(404).send("User not found");
+        }
 
-});
+        res.render("iasweb", {
+          listItems: foundUser.lists,
+          userEmail: thisEmail
+        });
+      })
+      .catch(err => {
+        console.error(err);
+        // Handle any other errors that may occur
+        res.status(500).send("Internal Server Error");
+      });
+  });
+
+
 
 app.post("/iasweb", function(req,res){
   const itemName = req.body.newItem;
@@ -103,6 +121,7 @@ app.post("/login", (req,res, next) => {
     failureFlash: true
   })(req,res,next);
 });
+
 
 
 app.post("/signup",function(req,res){
@@ -160,16 +179,58 @@ app.post("/signup",function(req,res){
 
 
 
+app.post("/reset-password", function(req,res){
+  let errors2=[]
+  const pwd = req.body.pwd;
+  const cpwd = req.body.cpwd;
+  const thisEmail = req.body.email;
+  // console.log(thisEmail);
+  if(!pwd || !cpwd){
+    errors2.push({msg: 'Please fill in all fields' });
+  }
+  if(pwd != cpwd){
+    errors2.push({msg: 'Passwords do not match' });
+  }
+  if(pwd.length<8){
+    errors2.push({msg: "Password should be atleast 8 characters"});
+  }
+
+  if(errors2.length>0){
+    res.render("reset-password",{
+      errors2,pwd,cpwd, resetEmail:thisEmail
+    });
+  } else{
+    User.findOne({email:thisEmail},async function(err,foundUser){
+      if(err){
+        console.log(err);
+      } else{
 
 
 
+        bcrypt.genSalt(10, (err, salt) =>
+        bcrypt.hash(pwd, salt, (err, hash) =>{
+          if(err) throw err;
+          foundUser.password = hash;
+          foundUser.save()
+           .then(user => {
+             req.flash("success_msg","Password changed.You can now log in with your new password!");
+             res.redirect("/login");
+           })
+           .catch(err => console.log(err));
 
+        }))
 
-
-
-
-
-
-app.listen(3000, function(){
-  console.log("server is running on port 3000");
+      }
+    })
+    // console.log("all set");
+  }
 })
+
+
+
+
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT,function(){
+  console.log("server is running on port 3000");
+});
