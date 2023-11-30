@@ -7,8 +7,9 @@
   <meta name="description" content="">
   <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
   <meta name="generator" content="Hugo 0.98.0">
-  <title>Truly IAS</title>
+  <title>Todo Signup</title>
 
+    <link rel="icon" href="images/icon.ico">
 
   <link rel="canonical" href="https://getbootstrap.com/docs/5.2/examples/sign-in/">
 
@@ -34,27 +35,31 @@
 
 <body  class="news-html">
 
-
-  <form action="/login" class=" w-100 m-auto" method="POST">
-
+  <form action="/signup" class=" w-100 m-auto" method="POST">
 
     <div class="box-news">
-      <h4>Login</h4>
+      <h4>Create Acount</h4>
       <%- include ("partials/messages") %>
 
-    <div class="form-input-group">
-      <input name="username" type="email" class="form-input" placeholder="Email" autofocus autocomplete="off">
+      <div class="form-input-group">
+        <input name="username" type="text" class="form-input" autocomplete="off" placeholder="Username" value="<%= typeof username != "undefined" ? username: "" %>" autofocus>
+      </div>
+      <div class="form-input-group">
+        <input name="email" type="email" class="form-input" autocomplete="off" placeholder="Email" value="<%= typeof email != "undefined" ? email: "" %>">
+      </div>
+      <div class="form-input-group">
+        <input name="password" type="password" class="form-input" placeholder="Password" value="<%= typeof password != "undefined" ? password: "" %>">
+      </div>
+      <div class="form-input-group">
+        <input name="cpassword" type="password" class="form-input" placeholder="Confirm password" value="<%= typeof cpassword != "undefined" ? cpassword: "" %>">
+      </div>
+      <button class="btn btn-lg btn-secondary form-btn btn-signup" type="submit">Create account</button>
+      <p class="form-text">Already have an account?<a class="form-link" id="SigninAcc" href="login"> Sign In</a>
+      </p>
     </div>
-    <div class="form-input-group">
-      <input name="password" type="password" class="form-input" placeholder="Password">
-    </div>
-    <button class="btn btn-lg btn-secondary form-btn btn-login" type="submit">Sign in</button>
-    <p class="form-text">Don't have an account?<a class="form-link" id="CreateAcc" href="signup"> Create account</a>
-    </p>
-    </div>
+
     <p class="copyright">© Copyright 2023 Truly IAS</p>
   </form>
-
 
 </body>
 
