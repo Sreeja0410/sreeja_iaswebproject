@@ -52,6 +52,7 @@ mongoose.connect(db)
 .catch(err => console.log(err));
 
 const User = require("./models/User.js")
+const Topper = require("./models/Topper.js")
 
 app.get("/",function(req,res){
   res.render("login");
@@ -75,13 +76,11 @@ app.get("/iasweb", ensureAuthenticated, (req, res) => {
     User.findOne({ email: thisEmail })
       .then(foundUser => {
         if (!foundUser) {
-          // Handle the case where no user is found
-          // You might want to redirect or render an error page
           return res.status(404).send("User not found");
         }
 
         res.render("iasweb", {
-          listItems: foundUser.lists,
+          //listItems: foundUser.lists,
           userEmail: thisEmail
         });
       })
@@ -92,26 +91,64 @@ app.get("/iasweb", ensureAuthenticated, (req, res) => {
       });
   });
 
-
-
-app.post("/iasweb", function(req,res){
-  const itemName = req.body.newItem;
-  const thisEmail = req.body.btn;
-  User.findOne({email:thisEmail}, async function(err,foundUser){
-    if(err){
-      console.log(err);
-    } else{
-      if(itemName === ""){
-        res.redirect("/iasweb");
-      }else{
-        foundUser.lists.push(itemName);
-        await foundUser.save();
-        res.redirect("/iasweb");
+  app.post("/iasweb", function(req,res){
+    const thisEmail = req.body.btn;
+    User.findOne({email:thisEmail}, async function(err,foundUser){
+      if(err){
+        console.log(err);
+      } else{
+        res.render("iasweb")
       }
-
-    }
+    })
   })
-})
+
+app.get("/iasweb/addtopper",ensureAuthenticated,(req, res) => {
+  res.render("addtopper");
+});
+
+app.post("/iasweb/addtopper", (req, res) => {
+
+  const {
+    name,
+      rank,
+      year,
+      gs1,
+      gs2,
+      essaymarks,
+      gsmarks,
+      csatmarks,
+      opt,
+      optmarks,
+      remarks
+  } = req.body;
+
+
+  const newTopper = new Topper({
+    name,
+    rank,
+    year,
+    gs1Marks:gs1,
+    gs2Marks:gs2,
+    essayMarks:essaymarks,
+    prelimsGSMarks: gsmarks,
+    prelimsCSATMarks: csatmarks,
+    optionalSubject: opt,
+    optional1Marks: optmarks,
+    remarks
+  });
+
+
+  newTopper.save()
+    .then(savedTopper => {
+      //console.log('Topper saved to the database:', savedTopper);
+       req.flash("success_msg","successfully added a topper");
+      res.redirect('/iasweb');
+    })
+    .catch(error => {
+      console.error('Error saving Topper to the database:', error);
+      res.status(500).send('Internal Server Error');
+    });
+});
 
 
 app.post("/login", (req,res, next) => {
@@ -175,57 +212,6 @@ app.post("/signup",function(req,res){
     });
   }
 });
-
-
-
-
-app.post("/reset-password", function(req,res){
-  let errors2=[]
-  const pwd = req.body.pwd;
-  const cpwd = req.body.cpwd;
-  const thisEmail = req.body.email;
-  // console.log(thisEmail);
-  if(!pwd || !cpwd){
-    errors2.push({msg: 'Please fill in all fields' });
-  }
-  if(pwd != cpwd){
-    errors2.push({msg: 'Passwords do not match' });
-  }
-  if(pwd.length<8){
-    errors2.push({msg: "Password should be atleast 8 characters"});
-  }
-
-  if(errors2.length>0){
-    res.render("reset-password",{
-      errors2,pwd,cpwd, resetEmail:thisEmail
-    });
-  } else{
-    User.findOne({email:thisEmail},async function(err,foundUser){
-      if(err){
-        console.log(err);
-      } else{
-
-
-
-        bcrypt.genSalt(10, (err, salt) =>
-        bcrypt.hash(pwd, salt, (err, hash) =>{
-          if(err) throw err;
-          foundUser.password = hash;
-          foundUser.save()
-           .then(user => {
-             req.flash("success_msg","Password changed.You can now log in with your new password!");
-             res.redirect("/login");
-           })
-           .catch(err => console.log(err));
-
-        }))
-
-      }
-    })
-    // console.log("all set");
-  }
-})
-
 
 
 
